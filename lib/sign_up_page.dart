@@ -31,7 +31,7 @@ class _SignUpPageState extends State<SignUpPage> {
     setState(() => _isLoading = true);
     try {
       final response = await http.post(
-        Uri.parse('http://localhost/alumni_api/register.php'), 
+        Uri.parse('final String url = "https://countrified-graptolitic-jessi.ngrok-free.dev/ALUMNI_API/register.php";'), 
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "full_name": _nameController.text,
