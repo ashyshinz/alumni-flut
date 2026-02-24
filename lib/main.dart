@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 // --- Page Imports ---
-// Ensure these files exist in your lib/ folder
 import 'login_page.dart';
 import 'dashboard_page.dart';
 import 'profile_page.dart';
@@ -11,10 +10,10 @@ import 'documents_page.dart';
 import 'verification_page.dart';
 import 'announcements_page.dart';
 import 'settings_page.dart';
-import 'surveys_page.dart'; // Tracer Studies module
+import 'surveys_page.dart'; 
 
 // --- Shell Imports ---
-import 'admin_main.dart';
+import 'admin_main.dart'; 
 import 'dean_main.dart';
 
 void main() => runApp(const AlumniPortalApp());
@@ -36,15 +35,14 @@ class AlumniPortalApp extends StatelessWidget {
       routes: {
         '/': (context) => const AuthWrapper(),
         '/login': (context) => const LoginPage(),
+        // Placeholder routes for named navigation if needed
         '/dashboard': (context) => const MainShell(),
-        '/admin_dashboard': (context) => const AdminMainShell(),
-        '/dean_dashboard': (context) => const DeanMainShell(),
+        '/dean_dashboard': (context) => const DeanMainShell(), 
       },
     );
   }
 }
 
-// Logic to determine if user goes to Login or Dashboard
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
@@ -63,7 +61,16 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
 // --- ALUMNI MAIN SHELL ---
 class MainShell extends StatefulWidget {
-  const MainShell({super.key});
+  final String userName;
+  final String userRole;
+  final String userEmail; // Added Email field
+
+  const MainShell({
+    super.key, 
+    this.userName = "Alumni User", 
+    this.userRole = "Alumni Member",
+    this.userEmail = "alumni@jmc.edu.ph", // Default placeholder
+  });
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -71,28 +78,34 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
+  late List<Widget> _pages; // Use late to initialize with widget data
 
-  // Mock notifications for the top header
+  @override
+  void initState() {
+    super.initState();
+    // Initialize pages here so we can pass the dynamic data to ProfilePage
+    _pages = [
+      const DashboardPage(),         // Index 0
+      ProfilePage(
+        initialName: widget.userName, 
+        initialEmail: widget.userEmail
+      ),                              // Index 1 (Linked to Database)
+      const EmploymentPage(),         // Index 2
+      const CareerTimelinePage(),    // Index 3
+      const DocumentsPage(),         // Index 4
+      const VerificationPage(),      // Index 5
+      const SurveysPage(),           // Index 6 
+      const AnnouncementsPage(),     // Index 7
+      const SettingsPage(),          // Index 8
+    ];
+  }
+
   final List<Map<String, String>> _notifications = [
     {"title": "Profile Verified", "msg": "Your profile is now 100% verified.", "time": "2m ago"},
     {"title": "Tracer Study", "msg": "New survey: Graduate Success 2026.", "time": "1h ago"},
     {"title": "Document Update", "msg": "Your Diploma copy was approved.", "time": "5h ago"},
   ];
 
-  // List of Page Widgets
- final List<Widget> _pages = [
-  const DashboardPage(),        // Index 0
-  const ProfilePage(),          // Index 1
-  const EmploymentPage(),       // Index 2
-  const CareerTimelinePage(),   // Index 3
-  const DocumentsPage(),        // Index 4
-  const VerificationPage(),     // Index 5
-  const SurveysPage(),          // Index 6 (The new addition)
-  const AnnouncementsPage(),    // Index 7
-  const SettingsPage(),          // Index 8
-];
-
-  // --- AI ASSISTANT MODAL ---
   void _showAIChat() {
     showModalBottomSheet(
       context: context,
@@ -108,8 +121,7 @@ class _MainShellState extends State<MainShell> {
           children: [
             Container(
               margin: const EdgeInsets.only(top: 10),
-              width: 40,
-              height: 5,
+              width: 40, height: 5,
               decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
             ),
             Padding(
@@ -124,11 +136,12 @@ class _MainShellState extends State<MainShell> {
                 ],
               ),
             ),
-            const Expanded(
+            Expanded(
               child: Center(
-                child: Text("Hello AJ! How can I help you navigate the portal today?", 
+                child: Text(
+                  "Hello ${widget.userName}! How can I help you navigate the portal today?", 
                   textAlign: TextAlign.center, 
-                  style: TextStyle(color: Colors.grey)
+                  style: const TextStyle(color: Colors.grey)
                 ),
               ),
             ),
@@ -153,14 +166,12 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // --- AI FLOATING BUTTON ---
       floatingActionButton: FloatingActionButton(
         onPressed: _showAIChat,
         backgroundColor: Colors.transparent,
         elevation: 0,
         child: Container(
-          width: 60,
-          height: 60,
+          width: 60, height: 60,
           decoration: const BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
@@ -173,7 +184,6 @@ class _MainShellState extends State<MainShell> {
           child: const Icon(Icons.psychology, color: Colors.white, size: 32),
         ),
       ),
-
       body: Row(
         children: [
           // 1. SIDEBAR
@@ -226,8 +236,6 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  // --- UI COMPONENTS ---
-
   Widget _buildSidebarHeader() {
     return Padding(
       padding: const EdgeInsets.all(24.0),
@@ -239,12 +247,15 @@ class _MainShellState extends State<MainShell> {
             child: const Icon(Icons.school, color: Color(0xFF420031), size: 20),
           ),
           const SizedBox(width: 12),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("Alumni Portal", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-              Text("Class of 2020", style: TextStyle(color: Colors.white70, fontSize: 11)),
-            ],
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Alumni Portal", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                // Synchronized with login response
+                Text(widget.userRole, style: const TextStyle(color: Colors.white70, fontSize: 11), overflow: TextOverflow.ellipsis),
+              ],
+            ),
           ),
         ],
       ),
@@ -280,7 +291,6 @@ class _MainShellState extends State<MainShell> {
             ),
           ),
           const Spacer(),
-
           // Notification Bell
           PopupMenuButton<int>(
             offset: const Offset(0, 50),
@@ -290,8 +300,7 @@ class _MainShellState extends State<MainShell> {
               children: [
                 const Icon(Icons.notifications_none_rounded, color: Color(0xFF420031), size: 28),
                 Positioned(
-                  right: -2,
-                  top: -2,
+                  right: -2, top: -2,
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: const BoxDecoration(color: Color(0xFFB58D3D), shape: BoxShape.circle),
@@ -315,24 +324,27 @@ class _MainShellState extends State<MainShell> {
               )),
             ],
           ),
-
           const SizedBox(width: 25),
-
-          // User Profile
+          // Dynamic User Profile
           Row(
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text("AJ Domopoy", style: TextStyle(color: Color(0xFF420031), fontWeight: FontWeight.bold, fontSize: 14)),
-                  Text("Alumni User", style: TextStyle(color: Colors.grey, fontSize: 11)),
+                  // Synchronized with database name
+                  Text(widget.userName, style: const TextStyle(color: Color(0xFF420031), fontWeight: FontWeight.bold, fontSize: 14)),
+                  // Synchronized with role
+                  Text(widget.userRole, style: const TextStyle(color: Colors.grey, fontSize: 11)),
                 ],
               ),
               const SizedBox(width: 12),
               CircleAvatar(
                 radius: 18,
                 backgroundColor: const Color(0xFF420031),
-                child: const Icon(Icons.person, color: Colors.white, size: 20),
+                child: Text(
+                  widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : "?", 
+                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)
+                ),
               ),
             ],
           ),

@@ -3,6 +3,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'sign_up_page.dart'; 
+import 'admin_main.dart'; 
+import 'dean_main.dart'; 
+import 'main.dart'; // Import to access MainShell (Alumni)
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,9 +16,6 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  String? selectedRole;
-  final List<String> roles = ["Alumni", "Admin", "Dean"];
-
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   
@@ -28,23 +29,26 @@ class _LoginPageState extends State<LoginPage> {
       successMessage = null;
     });
 
-    if (selectedRole == null || _emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      setState(() => errorMessage = "Please fill in all fields and select a Role");
+    String email = _emailController.text.trim();
+    String password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => errorMessage = "Please enter your email and password");
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
+      // For local development on emulator, 10.0.2.2 is usually used instead of localhost
       final url = Uri.parse('http://localhost/alumni_api/login.php'); 
       
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "email": _emailController.text,
-          "password": _passwordController.text,
-          "role": selectedRole!.toLowerCase(),
+          "email": email,
+          "password": password,
         }),
       );
 
@@ -53,19 +57,57 @@ class _LoginPageState extends State<LoginPage> {
       if (result['status'] == 'success') {
         setState(() => successMessage = "Login Successful! Redirecting...");
         
+        // 1. EXTRACT DATA FROM UPDATED PHP RESPONSE
         String dbRole = result['role'].toString().toLowerCase();
-        final route = dbRole == "dean" 
-            ? '/dean_dashboard' 
-            : (dbRole == "admin" ? '/admin_dashboard' : '/dashboard');
+        String fullName = result['full_name'] ?? "User"; 
+        String roleDisplay = result['role_display'] ?? "Alumni Member";
+        String userEmail = result['email'] ?? email; // Use email from DB or input
         
         await Future.delayed(const Duration(milliseconds: 1500));
         
-        if (mounted) Navigator.pushReplacementNamed(context, route);
+        if (mounted) {
+          // 2. DYNAMIC NAVIGATION WITH PARAMETERS
+          if (email == "superuser@jmc.edu.ph" || dbRole == "admin" || dbRole == "superuser") {
+            // Navigate to ADMIN
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AdminMainShell(
+                  adminName: fullName,
+                  adminRole: roleDisplay,
+                ),
+              ),
+            );
+          } else if (dbRole == "dean") {
+            // Navigate to DEAN
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DeanMainShell(
+                  deanName: fullName,
+                  deanRole: roleDisplay,
+                ),
+              ),
+            );
+          } else {
+            // Navigate to ALUMNI (Passes name and email to the Profile Page)
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MainShell(
+                  userName: fullName,
+                  userRole: roleDisplay,
+                  userEmail: userEmail, // Passing this for the Profile Page
+                ),
+              ),
+            );
+          }
+        }
       } else {
         setState(() => errorMessage = result['message']);
       }
     } catch (e) {
-      setState(() => errorMessage = "Connection error. Is XAMPP running?");
+      setState(() => errorMessage = "Connection error. Ensure XAMPP/Apache is running.");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -86,7 +128,6 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: themeColor,
       body: Stack(
         children: [
-          // 1. BACKGROUND IMAGE AREA
           ClipPath(
             clipper: BackgroundClipper(),
             child: Container(
@@ -101,8 +142,6 @@ class _LoginPageState extends State<LoginPage> {
               child: Container(color: Colors.white.withOpacity(0.1)),
             ),
           ),
-
-          // 2. LOGO SECTION
           Positioned(
             left: 60,
             top: 40,
@@ -114,8 +153,6 @@ class _LoginPageState extends State<LoginPage> {
                 const Icon(Icons.image_not_supported, size: 100, color: Colors.grey),
             ),
           ),
-
-          // 3. TEXT SECTION
           Positioned(
             left: 60,
             top: 0,
@@ -126,20 +163,15 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 const SizedBox(height: 180),
                 _buildLargeText("HELLO", color: themeColor),
-                _buildLargeText("WELCOME,", color: themeColor),
-                _buildLargeText(
-                  selectedRole?.toUpperCase() ?? "USER",
-                  color: Colors.black,
-                ),
+                _buildLargeText("WELCOME!", color: themeColor),
+                _buildLargeText("USER", color: Colors.black), 
               ],
             ),
           ),
-
-          // 4. BIGGER LOGIN BOX SECTION
           Align(
-            alignment: const Alignment(0.92, 0.0), // Pushed slightly more to the right
+            alignment: const Alignment(0.92, 0.0),
             child: Container(
-              width: 600, // INCREASED WIDTH (Bigger box)
+              width: 550,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(40),
@@ -164,34 +196,33 @@ class _LoginPageState extends State<LoginPage> {
                         border: Border.all(color: themeColor, width: 5), 
                       ),
                       child: const CircleAvatar(
-                        radius: 90, // Slightly bigger Avatar
+                        radius: 80, 
                         backgroundColor: Colors.white,
-                        child: Icon(Icons.person, size: 120, color: Color(0xFF4285F4)),
+                        child: Icon(Icons.person, size: 100, color: Color(0xFF4285F4)),
                       ),
                     ),
                   ),
-
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 50), // More internal space
+                    padding: const EdgeInsets.symmetric(horizontal: 50),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (successMessage != null) _buildBanner(successMessage!, Colors.green),
                         if (errorMessage != null) _buildBanner(errorMessage!, Colors.red),
-
-                        const Text("Role", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.black)),
-                        const SizedBox(height: 12),
-                        _buildDropdown(themeColor),
+                        const Text("Sign In", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28, color: Colors.black)),
                         const SizedBox(height: 25),
                         _buildField(Icons.email_outlined, "Email Address", themeColor, controller: _emailController),
                         const SizedBox(height: 20),
                         _buildField(Icons.lock_outline, "Password", themeColor, isPass: true, controller: _passwordController),
                         const SizedBox(height: 15),
-                        const Text("Forgot Password?", style: TextStyle(color: themeColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                        const Align(
+                          alignment: Alignment.centerRight,
+                          child: Text("Forgot Password?", style: TextStyle(color: themeColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                        ),
                         const SizedBox(height: 35),
                         SizedBox(
                           width: double.infinity,
-                          height: 65, // Taller button for the bigger box
+                          height: 60,
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _handleLogin,
                             style: ElevatedButton.styleFrom(
@@ -201,14 +232,40 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             child: _isLoading 
                               ? const CircularProgressIndicator(color: Colors.white)
-                              : const Text("Login", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                              : const Text("LOGIN", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                           ),
                         ),
+                        const SizedBox(height: 25),
+                        Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text("Don't have an account? ", style: TextStyle(fontSize: 15)),
+                              InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const SignUpPage()),
+                                  );
+                                },
+                                child: const Text(
+                                  "Sign Up",
+                                  style: TextStyle(
+                                    color: themeColor, 
+                                    fontWeight: FontWeight.bold, 
+                                    fontSize: 15,
+                                    decoration: TextDecoration.underline
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 50),
-                  
+                  const SizedBox(height: 30),
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 50),
                     decoration: const BoxDecoration(
@@ -234,12 +291,12 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Helper for Success/Error banners
+  // --- UI HELPER METHODS ---
   Widget _buildBanner(String msg, Color color) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 25),
-      padding: const EdgeInsets.all(15),
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
@@ -247,9 +304,9 @@ class _LoginPageState extends State<LoginPage> {
       ),
       child: Row(
         children: [
-          Icon(color == Colors.green ? Icons.check_circle : Icons.error, color: color),
-          const SizedBox(width: 12),
-          Expanded(child: Text(msg, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16))),
+          Icon(color == Colors.green ? Icons.check_circle : Icons.error, color: color, size: 20),
+          const SizedBox(width: 10),
+          Expanded(child: Text(msg, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 14))),
         ],
       ),
     );
@@ -258,35 +315,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildLargeText(String text, {Color color = Colors.white}) {
     return Text(
       text,
-      style: TextStyle(
-        fontSize: 120, 
-        fontWeight: FontWeight.w900,
-        color: color,
-        height: 0.82,
-        letterSpacing: -6,
-      ),
-    );
-  }
-
-  Widget _buildDropdown(Color themeColor) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.white, 
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey.shade300, width: 2),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: selectedRole,
-          isExpanded: true,
-          iconSize: 30,
-          hint: const Text("Choose your role"),
-          style: const TextStyle(color: Colors.black, fontSize: 18),
-          items: roles.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
-          onChanged: (v) => setState(() => selectedRole = v),
-        ),
-      ),
+      style: TextStyle(fontSize: 100, fontWeight: FontWeight.w900, color: color, height: 0.85, letterSpacing: -5),
     );
   }
 
@@ -304,11 +333,11 @@ class _LoginPageState extends State<LoginPage> {
         decoration: InputDecoration(
           prefixIcon: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 15),
-            child: Icon(icon, color: themeColor, size: 28),
+            child: Icon(icon, color: themeColor, size: 24),
           ),
           hintText: hint,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 22),
+          contentPadding: const EdgeInsets.symmetric(vertical: 20),
         ),
       ),
     );
@@ -319,9 +348,9 @@ class _LoginPageState extends State<LoginPage> {
       onTap: onTap,
       child: Row(
         children: [
-          FaIcon(icon, color: themeColor, size: 22),
+          FaIcon(icon, color: themeColor, size: 20),
           const SizedBox(width: 8),
-          Text(label, style: TextStyle(color: themeColor, fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(label, style: TextStyle(color: themeColor, fontWeight: FontWeight.bold, fontSize: 14)),
         ],
       ),
     );

@@ -8,7 +8,15 @@ import 'admin_settings.dart';
 import 'admin_verification.dart';
 
 class AdminMainShell extends StatefulWidget {
-  const AdminMainShell({super.key});
+  // Gidugangan og parameters para sa dynamic naming
+  final String adminName;
+  final String adminRole;
+
+  const AdminMainShell({
+    super.key, 
+    this.adminName = "System Admin", // Default value kung wala pay data
+    this.adminRole = "Superuser Access",
+  });
 
   @override
   State<AdminMainShell> createState() => _AdminMainShellState();
@@ -90,7 +98,6 @@ class _AdminMainShellState extends State<AdminMainShell> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       
-      // --- ADDED FLOATING ACTION BUTTON ---
       floatingActionButton: FloatingActionButton(
         onPressed: _showAIChat,
         backgroundColor: Colors.transparent,
@@ -101,7 +108,7 @@ class _AdminMainShellState extends State<AdminMainShell> {
           decoration: const BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
-              colors: [Color(0xFFB58D3D), Color(0xFF420031)], // Admin-themed gradient
+              colors: [Color(0xFFB58D3D), Color(0xFF420031)], 
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -149,7 +156,7 @@ class _AdminMainShellState extends State<AdminMainShell> {
           Expanded(
             child: Column(
               children: [
-                _buildTopHeader(),
+                _buildTopHeader(), // Mao ni ang Header
                 Expanded(
                   child: IndexedStack(
                     index: _selectedIndex,
@@ -188,7 +195,7 @@ class _AdminMainShellState extends State<AdminMainShell> {
     );
   }
 
-  // --- TOP HEADER ---
+  // --- TOP HEADER (DYNAMIC) ---
   Widget _buildTopHeader() {
     return Container(
       decoration: BoxDecoration(
@@ -200,7 +207,7 @@ class _AdminMainShellState extends State<AdminMainShell> {
         children: [
           Container(
             width: 400,
-            height: 45, // Adjusted height for better alignment
+            height: 45,
             decoration: BoxDecoration(
               color: const Color(0xFFF1F1F1),
               borderRadius: BorderRadius.circular(8),
@@ -220,17 +227,17 @@ class _AdminMainShellState extends State<AdminMainShell> {
           const SizedBox(width: 25),
           Row(
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    "System Admin",
-                    style: TextStyle(color: Color(0xFF420031), fontWeight: FontWeight.bold, fontSize: 14),
+                    widget.adminName, // DYNAMIC NAME
+                    style: const TextStyle(color: Color(0xFF420031), fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   Text(
-                    "Superuser Access",
-                    style: TextStyle(color: Colors.grey, fontSize: 11),
+                    widget.adminRole, // DYNAMIC ROLE
+                    style: const TextStyle(color: Colors.grey, fontSize: 11),
                   ),
                 ],
               ),
@@ -241,10 +248,13 @@ class _AdminMainShellState extends State<AdminMainShell> {
                   shape: BoxShape.circle,
                   border: Border.all(color: const Color(0xFF420031), width: 1.5),
                 ),
-                child: const CircleAvatar(
+                child: CircleAvatar(
                   radius: 16,
-                  backgroundColor: Color(0xFFB58D3D),
-                  child: Icon(Icons.person, color: Colors.white, size: 20),
+                  backgroundColor: const Color(0xFFB58D3D),
+                  child: Text(
+                    widget.adminName.isNotEmpty ? widget.adminName[0].toUpperCase() : "?",
+                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ],

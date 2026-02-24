@@ -3,15 +3,23 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final String? initialName;
+  final String? initialEmail;
+
+  const ProfilePage({
+    super.key, 
+    this.initialName, 
+    this.initialEmail,
+  });
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  // 1. STATE VARIABLES
+  // --- State Variables ---
   bool _isEditing = false;
+  bool _isLoading = false;
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
 
@@ -19,12 +27,64 @@ class _ProfilePageState extends State<ProfilePage> {
   final List<String> _skills = ["JavaScript", "React", "Node.js"];
 
   // Controllers
-  final TextEditingController _nameController = TextEditingController(text: "AJ Domopoy");
-  final TextEditingController _emailController = TextEditingController(text: "alumni@alumni.edu");
-  final TextEditingController _phoneController = TextEditingController(text: "+1 234 567 8900");
-  final TextEditingController _addressController = TextEditingController(text: "Enter your address");
+  late TextEditingController _nameController;
+  late TextEditingController _emailController;
+  final TextEditingController _phoneController = TextEditingController(text: "+63 912 345 6789");
+  final TextEditingController _addressController = TextEditingController(text: "Butuan City, Philippines");
 
-  // 2. LOGIC: ADD SKILL DIALOG
+  @override
+  void initState() {
+    super.initState();
+    // Initialize with data from Shell/Login
+    _nameController = TextEditingController(text: widget.initialName ?? "Alumni User");
+    _emailController = TextEditingController(text: widget.initialEmail ?? "alumni@jmc.edu.ph");
+    
+    // Updates the bold header name in real-time
+    _nameController.addListener(() {
+      setState(() {}); 
+    });
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
+    super.dispose();
+  }
+
+  // --- Actions ---
+
+  Future<void> _saveProfile() async {
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Name cannot be empty"), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    // Simulate Network Latency
+    await Future.delayed(const Duration(seconds: 1));
+
+    setState(() {
+      _isLoading = false;
+      _isEditing = false;
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Profile updated successfully!"),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   void _showAddSkillDialog() {
     final TextEditingController skillController = TextEditingController();
     showDialog(
@@ -34,15 +94,19 @@ class _ProfilePageState extends State<ProfilePage> {
         content: TextField(
           controller: skillController,
           autofocus: true,
-          decoration: const InputDecoration(hintText: "e.g. Flutter, Python, SQL"),
+          decoration: const InputDecoration(
+            hintText: "e.g. Flutter, Python, SQL",
+            border: OutlineInputBorder(),
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF420031), foregroundColor: Colors.white),
             onPressed: () {
               if (skillController.text.isNotEmpty) {
                 setState(() {
-                  _skills.add(skillController.text);
+                  _skills.add(skillController.text.trim());
                 });
                 Navigator.pop(context);
               }
@@ -54,7 +118,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // IMAGE PICKER LOGIC
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
@@ -67,57 +130,37 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF3F3F3),
+      color: const Color(0xFFF8F9FA),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(30),
+        padding: const EdgeInsets.all(32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Profile Management",
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
-            ),
-            const Text(
-              "Manage your personal information and professional details",
-              style: TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-            const SizedBox(height: 30),
+            _buildHeader(),
+            const SizedBox(height: 32),
 
-            // PROFILE PICTURE SECTION
+            // PROFILE SUMMARY CARD
             _buildSectionCard(
               child: Row(
                 children: [
-                  Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.grey.shade300,
-                        backgroundImage: _imageFile != null 
-                            ? FileImage(_imageFile!) as ImageProvider
-                            : const AssetImage('assets/eunchae.jpg'),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: InkWell(
-                          onTap: _pickImage,
-                          child: const CircleAvatar(
-                            radius: 18,
-                            backgroundColor: Color(0xFF4A0E2E),
-                            child: Icon(Icons.camera_alt, size: 18, color: Colors.white),
-                          ),
+                  _buildProfileAvatar(),
+                  const SizedBox(width: 30),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _nameController.text, 
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2D3436))
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 25),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(_nameController.text, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                      Text(_emailController.text, style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline)),
-                      const Text("Student ID: 2020-00123", style: TextStyle(color: Colors.grey)),
-                    ],
+                        Text(
+                          _emailController.text, 
+                          style: const TextStyle(color: Color(0xFF0984E3), fontSize: 15)
+                        ),
+                        const SizedBox(height: 4),
+                        const Text("Batch 2024 • BS Information Technology", style: TextStyle(color: Colors.grey)),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -134,23 +177,13 @@ class _ProfilePageState extends State<ProfilePage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text("Personal Information", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          setState(() => _isEditing = !_isEditing);
-                        },
-                        icon: Icon(_isEditing ? Icons.save : Icons.edit, size: 18),
-                        label: Text(_isEditing ? "Save Changes" : "Edit Profile"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _isEditing ? Colors.green : const Color(0xFF6366F1),
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
+                      _buildEditButton(),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const Divider(height: 30),
                   Row(
                     children: [
-                      Expanded(child: _buildField("Full Name", _nameController, Icons.person_outlined)),
+                      Expanded(child: _buildField("Full Name", _nameController, Icons.person_outline)),
                       const SizedBox(width: 20),
                       Expanded(child: _buildField("Email Address", _emailController, Icons.email_outlined)),
                     ],
@@ -160,35 +193,32 @@ class _ProfilePageState extends State<ProfilePage> {
                     children: [
                       Expanded(child: _buildField("Phone Number", _phoneController, Icons.phone_outlined)),
                       const SizedBox(width: 20),
-                      Expanded(child: _buildField("Program", TextEditingController(text: "Information Technology"), null, canEdit: false)),
+                      Expanded(child: _buildField("Account Status", TextEditingController(text: "Verified Alumni"), Icons.verified_user, canEdit: false)),
                     ],
                   ),
                   const SizedBox(height: 20),
-                  _buildField("Address", _addressController, Icons.location_on_outlined),
+                  _buildField("Residential Address", _addressController, Icons.location_on_outlined),
                 ],
               ),
             ),
 
             const SizedBox(height: 25),
 
-            // 5. SKILLS SECTION (UPDATED)
+            // SKILLS SECTION
             _buildSectionCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Skills", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text("Professional Skills", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 15),
                   Wrap(
                     spacing: 10,
                     runSpacing: 10,
                     children: [
-                      // Generate chips from the dynamic list
                       ..._skills.map((skill) => _buildSkillChip(skill)),
-                      
-                      // Only show the "Add" button when editing mode is ON
                       if (_isEditing) 
                         ActionChip(
-                          avatar: const Icon(Icons.add, size: 16, color: Color(0xFF1A237E)),
+                          avatar: const Icon(Icons.add, size: 16, color: Color(0xFF420031)),
                           label: const Text("Add Skill"),
                           onPressed: _showAddSkillDialog,
                           backgroundColor: Colors.white,
@@ -208,14 +238,87 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // --- Helper Widgets ---
 
+  Widget _buildHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Profile Management",
+          style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF420031)),
+        ),
+        Text(
+          "Update your personal and professional profile for the tracer study",
+          style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileAvatar() {
+    return Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 4),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
+          ),
+          child: CircleAvatar(
+            radius: 55,
+            backgroundColor: Colors.grey[200],
+            backgroundImage: _imageFile != null ? FileImage(_imageFile!) : null,
+            child: _imageFile == null 
+                ? const Icon(Icons.person, size: 55, color: Colors.grey) 
+                : null,
+          ),
+        ),
+        Positioned(
+          bottom: 0,
+          right: 4,
+          child: InkWell(
+            onTap: _pickImage,
+            child: const CircleAvatar(
+              radius: 18,
+              backgroundColor: Color(0xFF420031), 
+              child: Icon(Icons.camera_alt, size: 16, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEditButton() {
+    if (_isLoading) return const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2));
+
+    return ElevatedButton.icon(
+      onPressed: () {
+        if (_isEditing) {
+          _saveProfile();
+        } else {
+          setState(() => _isEditing = true);
+        }
+      },
+      icon: Icon(_isEditing ? Icons.check_circle_outline : Icons.edit_note_rounded, size: 20),
+      label: Text(_isEditing ? "Save Profile" : "Edit Profile"),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: _isEditing ? const Color(0xFF2ECC71) : const Color(0xFF420031),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
   Widget _buildSectionCard({required Widget child}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFEEEEEE)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 15, offset: const Offset(0, 5))],
       ),
       child: child,
     );
@@ -226,24 +329,26 @@ class _ProfilePageState extends State<ProfilePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 14, color: Colors.black87, fontWeight: FontWeight.w500)),
+        Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[700], fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
           readOnly: !activeEdit,
+          style: TextStyle(color: activeEdit ? Colors.black : Colors.black54),
           decoration: InputDecoration(
-            prefixIcon: icon != null ? Icon(icon, size: 20, color: activeEdit ? const Color(0xFF6366F1) : Colors.grey) : null,
+            prefixIcon: icon != null ? Icon(icon, size: 18, color: activeEdit ? const Color(0xFF420031) : Colors.grey) : null,
             filled: true,
-            fillColor: activeEdit ? Colors.white : const Color(0xFFF9F9F9),
+            fillColor: activeEdit ? Colors.white : const Color(0xFFF8F9FA),
+            hintText: "Enter $label",
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: activeEdit ? const Color(0xFF6366F1) : Colors.transparent),
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: activeEdit ? const Color(0xFF420031).withOpacity(0.3) : Colors.transparent),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF420031), width: 1.5),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
           ),
         ),
       ],
@@ -253,16 +358,17 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildSkillChip(String label) {
     return Chip(
       label: Text(label),
-      backgroundColor: const Color(0xFFC5CAE9),
-      labelStyle: const TextStyle(color: Color(0xFF1A237E), fontWeight: FontWeight.bold),
+      backgroundColor: const Color(0xFFF3E5F5), 
+      labelStyle: const TextStyle(color: Color(0xFF420031), fontWeight: FontWeight.w600, fontSize: 13),
       onDeleted: _isEditing ? () {
         setState(() {
           _skills.remove(label);
         });
-      } : null, // Show "X" to delete only when editing
-      deleteIconColor: const Color(0xFF1A237E),
+      } : null,
+      deleteIconColor: const Color(0xFF420031),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       side: BorderSide.none,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
   }
 }

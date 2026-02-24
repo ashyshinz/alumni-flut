@@ -7,7 +7,14 @@ import 'dean_department.dart';
 import 'dean_settings.dart';
 
 class DeanMainShell extends StatefulWidget {
-  const DeanMainShell({super.key});
+  final String deanName;
+  final String deanRole;
+
+  const DeanMainShell({
+    super.key,
+    this.deanName = "Department Dean", 
+    this.deanRole = "College Access",
+  });
 
   @override
   State<DeanMainShell> createState() => _DeanMainShellState();
@@ -16,6 +23,7 @@ class DeanMainShell extends StatefulWidget {
 class _DeanMainShellState extends State<DeanMainShell> {
   int _selectedIndex = 0;
 
+  // The pages accessible via the sidebar
   final List<Widget> _pages = [
     const DeanDashboard(),        
     const DepartmentAlumniPage(),  
@@ -57,12 +65,15 @@ class _DeanMainShellState extends State<DeanMainShell> {
                 ],
               ),
             ),
-            const Expanded(
+            Expanded(
               child: Center(
-                child: Text(
-                  "I can help you analyze department trends or draft announcements.",
-                  style: TextStyle(color: Colors.grey, fontSize: 13),
-                  textAlign: TextAlign.center,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Text(
+                    "Hello Dean ${widget.deanName}, I can help you analyze department trends or draft announcements for the ${widget.deanRole}.",
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
             ),
@@ -89,7 +100,6 @@ class _DeanMainShellState extends State<DeanMainShell> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       
-      // --- ADDED FLOATING ACTION BUTTON ---
       floatingActionButton: FloatingActionButton(
         onPressed: _showAIChat,
         backgroundColor: Colors.transparent,
@@ -100,7 +110,7 @@ class _DeanMainShellState extends State<DeanMainShell> {
           decoration: const BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
-              colors: [Color(0xFF420031), Color(0xFFC69C6D)], // Dean-themed gradient
+              colors: [Color(0xFF420031), Color(0xFFC69C6D)], 
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -164,7 +174,6 @@ class _DeanMainShellState extends State<DeanMainShell> {
     );
   }
 
-  // LOGOUT DIALOG LOGIC
   void _showLogoutDialog() {
     showDialog(
       context: context,
@@ -172,14 +181,9 @@ class _DeanMainShellState extends State<DeanMainShell> {
         title: const Text("Confirm Logout"),
         content: const Text("Are you sure you want to log out of the Dean portal?"),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context), 
-            child: const Text("Cancel")
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-            },
+            onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
             child: const Text("Logout"),
           ),
@@ -192,11 +196,11 @@ class _DeanMainShellState extends State<DeanMainShell> {
     return Container(
       padding: const EdgeInsets.all(25),
       alignment: Alignment.centerLeft,
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Department Dean", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-          Text("Alumni Management", style: TextStyle(color: Color(0xFFC69C6D), fontSize: 11)),
+          const Text("JMC Alumni", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(widget.deanRole, style: const TextStyle(color: Color(0xFFC69C6D), fontSize: 11)),
         ],
       ),
     );
@@ -213,8 +217,8 @@ class _DeanMainShellState extends State<DeanMainShell> {
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Academic Year", style: TextStyle(color: Colors.white54, fontSize: 10)),
-          Text("2025-2026", style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+          Text("System Status", style: TextStyle(color: Colors.white54, fontSize: 10)),
+          Text("Dean Access Active", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -226,42 +230,53 @@ class _DeanMainShellState extends State<DeanMainShell> {
         color: Colors.white,
         border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12), // Tightened vertical padding
+      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
       child: Row(
         children: [
-          Container(
-            width: 400,
-            height: 45, // Standardized height for a cleaner look
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const TextField(
-              decoration: InputDecoration(
-                prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey),
-                hintText: "Search alumni, reports, or announcements...",
-                hintStyle: TextStyle(fontSize: 13, color: Colors.grey),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 10),
+          Expanded(
+            child: Container(
+              height: 45,
+              constraints: const BoxConstraints(maxWidth: 400),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F1F1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const TextField(
+                decoration: InputDecoration(
+                  prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey),
+                  hintText: "Search department records...",
+                  hintStyle: TextStyle(fontSize: 13, color: Colors.grey),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                ),
               ),
             ),
           ),
           const Spacer(),
           const Icon(Icons.notifications_none, color: Color(0xFF420031), size: 26),
           const SizedBox(width: 25),
-          const Column(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text("Dr. Dean Anderson", style: TextStyle(color: Color(0xFF420031), fontWeight: FontWeight.bold, fontSize: 14)),
-              Text("Department Dean", style: TextStyle(color: Colors.grey, fontSize: 11)),
+              Text(
+                widget.deanName,
+                style: const TextStyle(color: Color(0xFF420031), fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              Text(
+                widget.deanRole,
+                style: const TextStyle(color: Colors.grey, fontSize: 11),
+              ),
             ],
           ),
           const SizedBox(width: 15),
-          const CircleAvatar(
+          CircleAvatar(
             radius: 18,
-            backgroundColor: Color(0xFF420031),
-            child: Icon(Icons.person, color: Colors.white, size: 20),
+            backgroundColor: const Color(0xFF420031),
+            child: Text(
+              widget.deanName.isNotEmpty ? widget.deanName[0].toUpperCase() : "D",
+              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
