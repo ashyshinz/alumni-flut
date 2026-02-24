@@ -13,7 +13,6 @@ class _LoginPageState extends State<LoginPage> {
   String? selectedRole;
   final List<String> roles = ["Alumni", "Admin", "Dean"];
 
-  // Function to open the browser for social logins
   Future<void> _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -27,32 +26,40 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    const Color themeColor = Color(0xFF420031);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF420031),
+      backgroundColor: themeColor,
       body: Stack(
         children: [
-          // 1. BACKGROUND GOLD SHAPE
+          // 1. BACKGROUND IMAGE AREA
           ClipPath(
             clipper: BackgroundClipper(),
             child: Container(
-              color: const Color(0xFFB58D3D),
               width: MediaQuery.of(context).size.width * 0.75,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                image: DecorationImage(
+                  image: AssetImage('assets/jmc.jpg'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+              child: Container(color: Colors.white.withOpacity(0.1)),
             ),
           ),
 
-          // 2. LOGO
+          // 2. LOGO SECTION - REMOVED WHITE BG AND SHADOW
           Positioned(
             left: 60,
             top: 40,
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: const BoxDecoration(
-                color: Colors.white,
+                color: Colors.transparent, // Makes background clear
                 shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
               ),
               child: Image.asset(
-                'assets/logo.png',
+                'assets/logo.png', // Ensure this is a transparent PNG
                 height: 150,
                 width: 150,
                 errorBuilder: (context, error, stackTrace) => 
@@ -71,8 +78,8 @@ class _LoginPageState extends State<LoginPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 180),
-                _buildLargeText("HELLO"),
-                _buildLargeText("WELCOME,"),
+                _buildLargeText("HELLO", color: themeColor),
+                _buildLargeText("WELCOME,", color: themeColor),
                 _buildLargeText(
                   selectedRole?.toUpperCase() ?? "USER",
                   color: Colors.black,
@@ -87,7 +94,7 @@ class _LoginPageState extends State<LoginPage> {
             child: Container(
               width: 500,
               decoration: BoxDecoration(
-                color: const Color(0xFFB58D3D),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
@@ -104,10 +111,14 @@ class _LoginPageState extends State<LoginPage> {
                     offset: const Offset(0, -60),
                     child: Container(
                       padding: const EdgeInsets.all(5),
-                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                      decoration: BoxDecoration(
+                        color: Colors.white, 
+                        shape: BoxShape.circle,
+                        border: Border.all(color: themeColor, width: 4), 
+                      ),
                       child: const CircleAvatar(
                         radius: 80,
-                        backgroundColor: Color(0xFFE8F0FE),
+                        backgroundColor: Colors.white,
                         child: Icon(Icons.person, size: 100, color: Color(0xFF4285F4)),
                       ),
                     ),
@@ -118,17 +129,17 @@ class _LoginPageState extends State<LoginPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text("Role ", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+                        const Text("Role ", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black)),
                         const SizedBox(height: 8),
-                        _buildDropdown(),
+                        _buildDropdown(themeColor),
                         const SizedBox(height: 25),
-                        _buildField(Icons.account_circle_outlined, "Username"),
+                        _buildField(Icons.account_circle_outlined, "Username", themeColor),
                         const SizedBox(height: 15),
-                        _buildField(Icons.email_outlined, "Email"),
+                        _buildField(Icons.email_outlined, "Email", themeColor),
                         const SizedBox(height: 15),
-                        _buildField(Icons.lock_outline, "Password", isPass: true),
+                        _buildField(Icons.lock_outline, "Password", themeColor, isPass: true),
                         const SizedBox(height: 15),
-                        const Text("Forgot Password?", style: TextStyle(color: Color(0xFF420031), fontWeight: FontWeight.bold)),
+                        const Text("Forgot Password?", style: TextStyle(color: themeColor, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 25),
                         Align(
                           alignment: Alignment.centerRight,
@@ -146,7 +157,7 @@ class _LoginPageState extends State<LoginPage> {
                               }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF420031),
+                              backgroundColor: themeColor,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -159,25 +170,24 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 40),
                   
-                  // UPDATED SOCIAL LOGIN SECTION
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 40),
                     decoration: const BoxDecoration(
-                      color: Color(0xFFC69C6D),
+                      color: Color.fromARGB(255, 240, 240, 240),
                       borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
                     ),
                     child: Row(
                       children: [
-                        const Text("Or Login With", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+                        const Text("Or Login With", style: TextStyle(color: Colors.black, fontWeight: FontWeight.w500)),
                         const Spacer(),
                         InkWell(
                           onTap: () => _launchURL('https://www.linkedin.com/login'),
-                          child: _socialIcon(FontAwesomeIcons.linkedin, "LinkedIn"),
+                          child: _socialIcon(FontAwesomeIcons.linkedin, "LinkedIn", themeColor),
                         ),
                         const SizedBox(width: 15),
                         InkWell(
                           onTap: () => _launchURL('https://accounts.google.com/'),
-                          child: _socialIcon(FontAwesomeIcons.google, "Google"),
+                          child: _socialIcon(FontAwesomeIcons.google, "Google", themeColor),
                         ),
                       ],
                     ),
@@ -190,8 +200,6 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-
-  // --- UI HELPER METHODS ---
 
   Widget _buildLargeText(String text, {Color color = Colors.white}) {
     return Text(
@@ -206,30 +214,42 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildDropdown() {
+  Widget _buildDropdown(Color themeColor) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15)),
+      decoration: BoxDecoration(
+        color: Colors.white, 
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: themeColor, width: 1.5),
+      ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: selectedRole,
           isExpanded: true,
-          hint: const Text("Select Role"),
-          items: roles.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+          iconEnabledColor: themeColor,
+          hint: const Text("Select Role", style: TextStyle(color: Colors.black)),
+          style: const TextStyle(color: Colors.black, fontSize: 16),
+          items: roles.map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(color: Colors.black)))).toList(),
           onChanged: (v) => setState(() => selectedRole = v),
         ),
       ),
     );
   }
 
-  Widget _buildField(IconData icon, String hint, {bool isPass = false}) {
+  Widget _buildField(IconData icon, String hint, Color themeColor, {bool isPass = false}) {
     return Container(
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15)),
+      decoration: BoxDecoration(
+        color: Colors.white, 
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: themeColor, width: 1.5),
+      ),
       child: TextField(
         obscureText: isPass,
+        style: const TextStyle(color: Colors.black),
         decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.grey[700], size: 24),
+          prefixIcon: Icon(icon, color: themeColor, size: 24),
           hintText: hint,
+          hintStyle: const TextStyle(color: Colors.grey),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 18),
         ),
@@ -237,13 +257,13 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _socialIcon(IconData icon, String label) {
+  Widget _socialIcon(IconData icon, String label, Color themeColor) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        FaIcon(icon, color: Colors.white, size: 20), // Use FaIcon for FontAwesome
+        FaIcon(icon, color: themeColor, size: 20),
         const SizedBox(width: 8),
-        Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        Text(label, style: TextStyle(color: themeColor, fontWeight: FontWeight.bold)),
       ],
     );
   }
