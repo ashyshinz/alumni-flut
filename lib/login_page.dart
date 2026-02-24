@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,14 +15,66 @@ class _LoginPageState extends State<LoginPage> {
   String? selectedRole;
   final List<String> roles = ["Alumni", "Admin", "Dean"];
 
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  
+  String? errorMessage; 
+  String? successMessage; 
+  bool _isLoading = false;
+
+  Future<void> _handleLogin() async {
+    setState(() {
+      errorMessage = null;
+      successMessage = null;
+    });
+
+    if (selectedRole == null || _emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      setState(() => errorMessage = "Please fill in all fields and select a Role");
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final url = Uri.parse('http://localhost/alumni_api/login.php'); 
+      
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "email": _emailController.text,
+          "password": _passwordController.text,
+          "role": selectedRole!.toLowerCase(),
+        }),
+      );
+
+      final result = jsonDecode(response.body);
+
+      if (result['status'] == 'success') {
+        setState(() => successMessage = "Login Successful! Redirecting...");
+        
+        String dbRole = result['role'].toString().toLowerCase();
+        final route = dbRole == "dean" 
+            ? '/dean_dashboard' 
+            : (dbRole == "admin" ? '/admin_dashboard' : '/dashboard');
+        
+        await Future.delayed(const Duration(milliseconds: 1500));
+        
+        if (mounted) Navigator.pushReplacementNamed(context, route);
+      } else {
+        setState(() => errorMessage = result['message']);
+      }
+    } catch (e) {
+      setState(() => errorMessage = "Connection error. Is XAMPP running?");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Could not launch $url")),
-        );
-      }
+      setState(() => errorMessage = "Could not launch $url");
     }
   }
 
@@ -48,23 +102,16 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
 
-          // 2. LOGO SECTION - REMOVED WHITE BG AND SHADOW
+          // 2. LOGO SECTION
           Positioned(
             left: 60,
             top: 40,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(
-                color: Colors.transparent, // Makes background clear
-                shape: BoxShape.circle,
-              ),
-              child: Image.asset(
-                'assets/logo.png', // Ensure this is a transparent PNG
-                height: 150,
-                width: 150,
-                errorBuilder: (context, error, stackTrace) => 
-                  const Icon(Icons.image_not_supported, size: 100, color: Colors.grey),
-              ),
+            child: Image.asset(
+              'assets/logo.png',
+              height: 150,
+              width: 150,
+              errorBuilder: (context, error, stackTrace) => 
+                const Icon(Icons.image_not_supported, size: 100, color: Colors.grey),
             ),
           ),
 
@@ -88,19 +135,19 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
 
-          // 4. LOGIN BOX SECTION
+          // 4. BIGGER LOGIN BOX SECTION
           Align(
-            alignment: const Alignment(0.85, 0.0),
+            alignment: const Alignment(0.92, 0.0), // Pushed slightly more to the right
             child: Container(
-              width: 500,
+              width: 600, // INCREASED WIDTH (Bigger box)
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(40),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.4),
-                    blurRadius: 30,
-                    offset: const Offset(0, 15),
+                    blurRadius: 40,
+                    offset: const Offset(0, 20),
                   )
                 ],
               ),
@@ -108,87 +155,73 @@ class _LoginPageState extends State<LoginPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Transform.translate(
-                    offset: const Offset(0, -60),
+                    offset: const Offset(0, -70),
                     child: Container(
                       padding: const EdgeInsets.all(5),
                       decoration: BoxDecoration(
                         color: Colors.white, 
                         shape: BoxShape.circle,
-                        border: Border.all(color: themeColor, width: 4), 
+                        border: Border.all(color: themeColor, width: 5), 
                       ),
                       child: const CircleAvatar(
-                        radius: 80,
+                        radius: 90, // Slightly bigger Avatar
                         backgroundColor: Colors.white,
-                        child: Icon(Icons.person, size: 100, color: Color(0xFF4285F4)),
+                        child: Icon(Icons.person, size: 120, color: Color(0xFF4285F4)),
                       ),
                     ),
                   ),
 
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    padding: const EdgeInsets.symmetric(horizontal: 50), // More internal space
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text("Role ", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black)),
-                        const SizedBox(height: 8),
+                        if (successMessage != null) _buildBanner(successMessage!, Colors.green),
+                        if (errorMessage != null) _buildBanner(errorMessage!, Colors.red),
+
+                        const Text("Role", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.black)),
+                        const SizedBox(height: 12),
                         _buildDropdown(themeColor),
                         const SizedBox(height: 25),
-                        _buildField(Icons.account_circle_outlined, "Username", themeColor),
+                        _buildField(Icons.email_outlined, "Email Address", themeColor, controller: _emailController),
+                        const SizedBox(height: 20),
+                        _buildField(Icons.lock_outline, "Password", themeColor, isPass: true, controller: _passwordController),
                         const SizedBox(height: 15),
-                        _buildField(Icons.email_outlined, "Email", themeColor),
-                        const SizedBox(height: 15),
-                        _buildField(Icons.lock_outline, "Password", themeColor, isPass: true),
-                        const SizedBox(height: 15),
-                        const Text("Forgot Password?", style: TextStyle(color: themeColor, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 25),
-                        Align(
-                          alignment: Alignment.centerRight,
+                        const Text("Forgot Password?", style: TextStyle(color: themeColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                        const SizedBox(height: 35),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 65, // Taller button for the bigger box
                           child: ElevatedButton(
-                            onPressed: () {
-                              if (selectedRole != null) {
-                                final route = selectedRole == "Dean" 
-                                  ? '/dean_dashboard' 
-                                  : (selectedRole == "Admin" ? '/admin_dashboard' : '/dashboard');
-                                Navigator.pushReplacementNamed(context, route);
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("Please select a Role first")),
-                                );
-                              }
-                            },
+                            onPressed: _isLoading ? null : _handleLogin,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: themeColor,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                             ),
-                            child: const Text("LOGIN", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            child: _isLoading 
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : const Text("Login", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 50),
                   
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 40),
+                    padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 50),
                     decoration: const BoxDecoration(
-                      color: Color.fromARGB(255, 240, 240, 240),
-                      borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
+                      color: Color.fromARGB(255, 245, 245, 245),
+                      borderRadius: BorderRadius.only(bottomLeft: Radius.circular(40), bottomRight: Radius.circular(40)),
                     ),
                     child: Row(
                       children: [
-                        const Text("Or Login With", style: TextStyle(color: Colors.black, fontWeight: FontWeight.w500)),
+                        const Text("Or login with", style: TextStyle(color: Colors.black54, fontSize: 16)),
                         const Spacer(),
-                        InkWell(
-                          onTap: () => _launchURL('https://www.linkedin.com/login'),
-                          child: _socialIcon(FontAwesomeIcons.linkedin, "LinkedIn", themeColor),
-                        ),
-                        const SizedBox(width: 15),
-                        InkWell(
-                          onTap: () => _launchURL('https://accounts.google.com/'),
-                          child: _socialIcon(FontAwesomeIcons.google, "Google", themeColor),
-                        ),
+                        _socialButton(FontAwesomeIcons.linkedin, "LinkedIn", themeColor, () => _launchURL('https://linkedin.com')),
+                        const SizedBox(width: 20),
+                        _socialButton(FontAwesomeIcons.google, "Google", themeColor, () => _launchURL('https://google.com')),
                       ],
                     ),
                   ),
@@ -201,11 +234,32 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  // Helper for Success/Error banners
+  Widget _buildBanner(String msg, Color color) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 25),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(color == Colors.green ? Icons.check_circle : Icons.error, color: color),
+          const SizedBox(width: 12),
+          Expanded(child: Text(msg, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16))),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLargeText(String text, {Color color = Colors.white}) {
     return Text(
       text,
       style: TextStyle(
-        fontSize: 160,
+        fontSize: 120, 
         fontWeight: FontWeight.w900,
         color: color,
         height: 0.82,
@@ -216,55 +270,60 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _buildDropdown(Color themeColor) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
       decoration: BoxDecoration(
         color: Colors.white, 
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: themeColor, width: 1.5),
+        border: Border.all(color: Colors.grey.shade300, width: 2),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: selectedRole,
           isExpanded: true,
-          iconEnabledColor: themeColor,
-          hint: const Text("Select Role", style: TextStyle(color: Colors.black)),
-          style: const TextStyle(color: Colors.black, fontSize: 16),
-          items: roles.map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(color: Colors.black)))).toList(),
+          iconSize: 30,
+          hint: const Text("Choose your role"),
+          style: const TextStyle(color: Colors.black, fontSize: 18),
+          items: roles.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
           onChanged: (v) => setState(() => selectedRole = v),
         ),
       ),
     );
   }
 
-  Widget _buildField(IconData icon, String hint, Color themeColor, {bool isPass = false}) {
+  Widget _buildField(IconData icon, String hint, Color themeColor, {bool isPass = false, TextEditingController? controller}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white, 
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: themeColor, width: 1.5),
+        border: Border.all(color: Colors.grey.shade300, width: 2),
       ),
       child: TextField(
+        controller: controller,
         obscureText: isPass,
-        style: const TextStyle(color: Colors.black),
+        style: const TextStyle(fontSize: 18),
         decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: themeColor, size: 24),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15),
+            child: Icon(icon, color: themeColor, size: 28),
+          ),
           hintText: hint,
-          hintStyle: const TextStyle(color: Colors.grey),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 18),
+          contentPadding: const EdgeInsets.symmetric(vertical: 22),
         ),
       ),
     );
   }
 
-  Widget _socialIcon(IconData icon, String label, Color themeColor) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        FaIcon(icon, color: themeColor, size: 20),
-        const SizedBox(width: 8),
-        Text(label, style: TextStyle(color: themeColor, fontWeight: FontWeight.bold)),
-      ],
+  Widget _socialButton(IconData icon, String label, Color themeColor, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Row(
+        children: [
+          FaIcon(icon, color: themeColor, size: 22),
+          const SizedBox(width: 8),
+          Text(label, style: TextStyle(color: themeColor, fontWeight: FontWeight.bold, fontSize: 16)),
+        ],
+      ),
     );
   }
 }
