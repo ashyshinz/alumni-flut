@@ -41,7 +41,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       // For local development on emulator, 10.0.2.2 is usually used instead of localhost
-      final url = Uri.parse('https://countrified-graptolitic-jessi.ngrok-free.dev/alumni_portal/login.php'); 
+      final url = Uri.parse('http://localhost:8080/alumni_api/login.php'); 
       
       final response = await http.post(
         url,
