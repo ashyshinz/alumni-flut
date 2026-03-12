@@ -15,7 +15,7 @@ jobs:
     steps:
       # 1. Download full repository history (required for accurate analysis)
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5  # Updated to v5
         with:
           fetch-depth: 0
 
@@ -30,7 +30,6 @@ jobs:
         run: flutter pub get
 
       # 4. Run the SonarQube Cloud scan
-      # sonarqube-scan-action reads sonar-project.properties automatically
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
